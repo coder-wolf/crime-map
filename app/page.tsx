@@ -9,6 +9,7 @@ import {
   getSafetyLabel,
   clusterIncidents,
 } from './data';
+import type { MapBounds } from './MapView';
 
 const MapView = dynamic(() => import('./MapView'), { ssr: false });
 
@@ -38,9 +39,26 @@ async function clearIncidents() {
   } catch {}
 }
 
+function formatCoord(n: number, isLat: boolean): string {
+  const dir = isLat ? (n >= 0 ? 'N' : 'S') : n >= 0 ? 'E' : 'W';
+  return `${Math.abs(n).toFixed(4)}°${dir}`;
+}
+
+function isClusterVisible(
+  cluster: CrimeCluster,
+  bounds: MapBounds | null,
+): boolean {
+  if (!bounds) return true;
+  const [[south, west], [north, east]] = bounds;
+  return cluster.polygon.some(
+    ([lat, lng]) => lat >= south && lat <= north && lng >= west && lng <= east,
+  );
+}
+
 export default function Home() {
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [isReporting, setIsReporting] = useState(false);
+  const [bounds, setBounds] = useState<MapBounds | null>(null);
 
   useEffect(() => {
     fetchIncidents().then(setIncidents);
@@ -51,10 +69,23 @@ export default function Home() {
     [incidents],
   );
 
-  const sorted = useMemo(
-    () => [...clusters].sort((a, b) => a.safetyScore - b.safetyScore),
-    [clusters],
+  const visibleClusters = useMemo(
+    () => clusters.filter((c) => isClusterVisible(c, bounds)),
+    [clusters, bounds],
   );
+
+  const sorted = useMemo(
+    () => [...visibleClusters].sort((a, b) => a.safetyScore - b.safetyScore),
+    [visibleClusters],
+  );
+
+  const centerLabel = useMemo(() => {
+    if (!bounds) return 'Loading...';
+    const [[s, w], [n, e]] = bounds;
+    const lat = (s + n) / 2;
+    const lng = (w + e) / 2;
+    return `${formatCoord(lat, true)}, ${formatCoord(lng, false)}`;
+  }, [bounds]);
 
   const handleMapClick = useCallback(
     (latlng: [number, number]) => {
@@ -80,7 +111,7 @@ export default function Home() {
       <aside className="w-1/5 min-w-[250px] h-full overflow-y-auto border-r border-zinc-200 bg-white dark:bg-zinc-950 dark:border-zinc-800 flex flex-col">
         <div className="p-4 border-b border-zinc-200 dark:border-zinc-800">
           <h1 className="text-xl font-bold">Crime Map</h1>
-          <p className="text-sm text-zinc-500">Khulna City</p>
+          <p className="text-xs text-zinc-500 truncate">{centerLabel}</p>
         </div>
 
         <div className="flex-1 overflow-y-auto p-2 space-y-1">
@@ -89,6 +120,11 @@ export default function Home() {
               No incidents reported yet.
               <br />
               Click &quot;Report Incident&quot; to start.
+            </p>
+          )}
+          {incidents.length > 0 && sorted.length === 0 && (
+            <p className="text-sm text-zinc-400 text-center py-8">
+              No clusters visible at this zoom level.
             </p>
           )}
           {sorted.map((cluster) => (
@@ -175,6 +211,7 @@ export default function Home() {
           clusters={clusters}
           isReporting={isReporting}
           onReport={handleMapClick}
+          onBoundsChange={setBounds}
         />
       </main>
     </div>

@@ -17,6 +17,8 @@ import {
   SECONDARY_RADIUS,
 } from './data';
 
+export type MapBounds = [[number, number], [number, number]];
+
 const ClickHandler = React.memo(function ClickHandler({
   isReporting,
   onClick,
@@ -34,16 +36,41 @@ const ClickHandler = React.memo(function ClickHandler({
   return null;
 });
 
+function BoundsReporter({
+  onBoundsChange,
+}: {
+  onBoundsChange: (bounds: MapBounds) => void;
+}) {
+  const map = useMapEvents({
+    moveend() {
+      report();
+    },
+  });
+
+  function report() {
+    const b = map.getBounds();
+    onBoundsChange([[b.getSouth(), b.getWest()], [b.getNorth(), b.getEast()]]);
+  }
+
+  React.useEffect(() => {
+    report();
+  }, []);
+
+  return null;
+}
+
 const MapView = React.memo(function MapView({
   incidents,
   clusters,
   isReporting,
   onReport,
+  onBoundsChange,
 }: {
   incidents: Incident[];
   clusters: CrimeCluster[];
   isReporting: boolean;
   onReport: (latlng: [number, number]) => void;
+  onBoundsChange: (bounds: MapBounds) => void;
 }) {
   return (
     <MapContainer
@@ -60,6 +87,7 @@ const MapView = React.memo(function MapView({
       />
 
       <ClickHandler isReporting={isReporting} onClick={onReport} />
+      <BoundsReporter onBoundsChange={onBoundsChange} />
 
       {clusters.map((cluster) => (
         <Polygon
