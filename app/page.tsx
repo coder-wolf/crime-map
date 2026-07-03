@@ -25,18 +25,24 @@ async function fetchIncidents(): Promise<Incident[]> {
 
 async function postIncident(inc: Incident) {
   try {
-    await fetch('/api/incidents', {
+    const res = await fetch('/api/incidents', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(inc),
     });
-  } catch {}
+    if (!res.ok) console.error('POST /api/incidents failed', await res.text());
+  } catch (e) {
+    console.error('POST /api/incidents threw', e);
+  }
 }
 
 async function clearIncidents() {
   try {
-    await fetch('/api/incidents', { method: 'DELETE' });
-  } catch {}
+    const res = await fetch('/api/incidents', { method: 'DELETE' });
+    if (!res.ok) console.error('DELETE /api/incidents failed', await res.text());
+  } catch (e) {
+    console.error('DELETE /api/incidents threw', e);
+  }
 }
 
 function formatCoord(n: number, isLat: boolean): string {
