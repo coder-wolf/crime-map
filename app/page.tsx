@@ -219,15 +219,22 @@ export default function Home() {
 
       <button
         onClick={() => setSidebarOpen((p) => !p)}
-        className="absolute top-1/2 -translate-y-1/2 z-20 w-6 h-12 flex items-center justify-center bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-r-md shadow-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
-        style={{ left: sidebarOpen ? sidebarWidth - 1 : 0 }}
+        title={sidebarOpen ? 'Hide sidebar' : 'Show sidebar'}
+        className="absolute top-1/2 -translate-y-1/2 z-20 w-7 h-14 flex items-center justify-center bg-white dark:bg-zinc-800 border-zinc-300 dark:border-zinc-600 shadow-lg hover:shadow-xl hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-all cursor-pointer group"
+        style={{
+          left: sidebarOpen ? sidebarWidth - 1 : 0,
+          borderRadius: sidebarOpen ? '0 8px 8px 0' : '0 8px 8px 0',
+          borderWidth: '1px',
+          borderStyle: 'solid',
+          borderLeft: sidebarOpen ? 'none' : undefined,
+        }}
       >
         <svg
-          className="w-3 h-3 text-zinc-500"
+          className="w-4 h-4 text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300 transition-colors"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
-          strokeWidth={2}
+          strokeWidth={2.5}
         >
           <path
             strokeLinecap="round"
