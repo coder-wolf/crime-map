@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import {
   type Incident,
@@ -9,6 +9,7 @@ import {
   getSafetyLabel,
   getRecencyColor,
   clusterIncidents,
+  fetchLocationName,
 } from './data';
 import type { MapBounds } from './MapView';
 import ReportCard from './ReportCard';
@@ -64,6 +65,9 @@ export default function Home() {
   const [pendingLocation, setPendingLocation] = useState<[number, number] | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [bounds, setBounds] = useState<MapBounds | null>(null);
+  const [selectedClusterId, setSelectedClusterId] = useState<string | null>(null);
+  const [clusterNames, setClusterNames] = useState<Record<string, string>>({});
+  const [polygonColorMode, setPolygonColorMode] = useState<'gray' | 'color'>('color');
 
   useEffect(() => {
     fetchIncidents().then(setIncidents);
@@ -83,6 +87,39 @@ export default function Home() {
     () => [...visibleClusters].sort((a, b) => a.safetyScore - b.safetyScore),
     [visibleClusters],
   );
+
+  useEffect(() => {
+    if (clusters.length === 0) return;
+    let cancelled = false;
+
+    async function fetchNames() {
+      const names: Record<string, string> = {};
+      for (const cluster of clusters) {
+        if (cancelled) break;
+        const lat = cluster.incidents.reduce((s, i) => s + i.lat, 0) / cluster.incidents.length;
+        const lng = cluster.incidents.reduce((s, i) => s + i.lng, 0) / cluster.incidents.length;
+        names[cluster.id] = await fetchLocationName(lat, lng);
+      }
+      if (!cancelled) {
+        setClusterNames((prev) => ({ ...prev, ...names }));
+      }
+    }
+
+    fetchNames();
+    return () => { cancelled = true; };
+  }, [clusters]);
+
+  const handleClusterSelect = useCallback((id: string | null) => {
+    setSelectedClusterId(id);
+  }, []);
+
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') setSelectedClusterId(null);
+    }
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, []);
 
   const {
     enabled: alertsEnabled,
@@ -124,18 +161,50 @@ export default function Home() {
     [],
   );
 
+  const [sidebarWidth, setSidebarWidth] = useState(320);
+  const dragRef = useRef({ dragging: false, startX: 0, startWidth: 0 });
+
+  const handleDragStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    dragRef.current = { dragging: true, startX: e.clientX, startWidth: sidebarWidth };
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  }, [sidebarWidth]);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!dragRef.current.dragging) return;
+      const newWidth = Math.max(180, Math.min(600, dragRef.current.startWidth + (e.clientX - dragRef.current.startX)));
+      setSidebarWidth(newWidth);
+    };
+    const handleMouseUp = () => {
+      if (!dragRef.current.dragging) return;
+      dragRef.current.dragging = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, []);
+
   const handleCancelReport = useCallback(() => {
     setPendingLocation(null);
   }, []);
 
-  const sidebarWidth = 260;
-
   return (
     <div className="flex h-screen w-screen relative overflow-hidden">
       <aside
-        className="h-full overflow-y-auto border-r border-zinc-200 bg-white dark:bg-zinc-950 dark:border-zinc-800 flex flex-col shrink-0 transition-all duration-300 ease-in-out"
-        style={{ width: sidebarOpen ? sidebarWidth : 0 }}
+        className="h-full overflow-y-auto border-r border-zinc-200 bg-white dark:bg-zinc-950 dark:border-zinc-800 flex flex-col shrink-0 relative"
+        style={{ width: sidebarOpen ? sidebarWidth : 0, transition: sidebarOpen ? 'none' : 'width 0.3s ease-in-out' }}
       >
+        <div
+          className="absolute top-0 right-0 w-1.5 h-full cursor-col-resize hover:bg-blue-500/30 active:bg-blue-500/50 z-10"
+          onMouseDown={handleDragStart}
+        />
         <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 shrink-0 flex items-center gap-3">
           <button
             onClick={() => setSidebarOpen((p) => !p)}
@@ -167,37 +236,39 @@ export default function Home() {
               No clusters visible at this zoom level.
             </p>
           )}
-          {sorted.map((cluster) => (
-            <div
-              key={cluster.id}
-              className="flex items-center gap-3 p-3 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-900 cursor-pointer transition-colors"
-            >
+          {sorted.map((cluster) => {
+            const lat = cluster.incidents.reduce((s, i) => s + i.lat, 0) / cluster.incidents.length;
+            const lng = cluster.incidents.reduce((s, i) => s + i.lng, 0) / cluster.incidents.length;
+            const locationName = clusterNames[cluster.id] || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+            const isSelected = cluster.id === selectedClusterId;
+            return (
               <div
-                className="w-4 h-4 rounded-full shrink-0"
-                style={{ backgroundColor: getSafetyColor(cluster.safetyScore) }}
-              />
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm truncate">
-                  {getSafetyLabel(cluster.safetyScore)} Zone
-                </p>
-                <p className="text-xs text-zinc-400 truncate">
-                  {cluster.incidents.length} incidents &middot;{' '}
-                  {cluster.incidents.length > 0
-                    ? `~${(
-                        cluster.incidents.reduce((s, i) => s + i.lat, 0) /
-                        cluster.incidents.length
-                      ).toFixed(3)}, ${(
-                        cluster.incidents.reduce((s, i) => s + i.lng, 0) /
-                        cluster.incidents.length
-                      ).toFixed(3)}`
-                    : ''}
-                </p>
+                key={cluster.id}
+                onClick={() => setSelectedClusterId(isSelected ? null : cluster.id)}
+                className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
+                  isSelected
+                    ? 'bg-blue-100 dark:bg-blue-900/30 ring-2 ring-blue-500'
+                    : 'hover:bg-zinc-100 dark:hover:bg-zinc-900'
+                }`}
+              >
+                <div
+                  className="w-4 h-4 rounded-full shrink-0"
+                  style={{ backgroundColor: getSafetyColor(cluster.safetyScore) }}
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm truncate">
+                    {locationName}
+                  </p>
+                  <p className="text-xs text-zinc-400 truncate">
+                    {getSafetyLabel(cluster.safetyScore)}
+                  </p>
+                </div>
+                <span className="text-xs font-semibold tabular-nums">
+                  {cluster.incidents.length}
+                </span>
               </div>
-              <span className="text-xs font-semibold tabular-nums">
-                {cluster.safetyScore}
-              </span>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 space-y-2 shrink-0">
@@ -212,6 +283,12 @@ export default function Home() {
             <span>High Crime</span>
             <span>Low Crime</span>
           </div>
+          <button
+            onClick={() => setPolygonColorMode(p => p === 'gray' ? 'color' : 'gray')}
+            className="w-full text-xs px-2 py-1 rounded border border-zinc-300 dark:border-zinc-600 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer text-zinc-500"
+          >
+            {polygonColorMode === 'gray' ? 'Show Color Map' : 'Show Gray Map'}
+          </button>
 
           <div className="flex items-center justify-between py-1">
             <div className="flex items-center gap-2 min-w-0">
@@ -319,6 +396,9 @@ export default function Home() {
           clusters={clusters}
           isReporting={isReporting}
           pendingLocation={pendingLocation}
+          polygonColorMode={polygonColorMode}
+          selectedClusterId={selectedClusterId}
+          onClusterSelect={handleClusterSelect}
           onReport={handleMapClick}
           onSelectCrime={handleCrimeSelect}
           onCancelReport={handleCancelReport}

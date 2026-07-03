@@ -1,0 +1,14 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "lmstudio": {
+      "baseURL": "http://localhost:1234",
+      "models": {
+        "google/gemma-4-e2b": {}
+      }
+    }
+  },
+  "model": "google/gemma-4-e2b"
+}
+
+

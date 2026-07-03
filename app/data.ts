@@ -233,3 +233,28 @@ export function pointInPolygon(point: [number, number], polygon: [number, number
 export function metersToDeg(meters: number): number {
   return meters / 111320;
 }
+
+const locationNameCache = new Map<string, string>();
+
+export async function fetchLocationName(lat: number, lng: number): Promise<string> {
+  const key = `${lat.toFixed(4)},${lng.toFixed(4)}`;
+  const cached = locationNameCache.get(key);
+  if (cached) return cached;
+
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=16&accept-language=en`,
+      { headers: { 'User-Agent': 'CrimeMap/1.0' } }
+    );
+    if (!res.ok) throw new Error('Nominatim request failed');
+    const data = await res.json();
+    const parts = (data.display_name ?? '').split(', ');
+    const name = parts.slice(0, 2).join(', ') || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+    locationNameCache.set(key, name);
+    return name;
+  } catch {
+    const fallback = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+    locationNameCache.set(key, fallback);
+    return fallback;
+  }
+}

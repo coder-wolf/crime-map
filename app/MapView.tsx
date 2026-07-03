@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import L from 'leaflet';
 import {
   MapContainer,
@@ -11,6 +11,7 @@ import {
   Popup,
   Tooltip,
   useMapEvents,
+  useMap,
 } from 'react-leaflet';
 import {
   type Incident,
@@ -29,14 +30,26 @@ export type MapBounds = [[number, number], [number, number]];
 const ClickHandler = React.memo(function ClickHandler({
   isReporting,
   onClick,
+  onDeselect,
+  hasSelection,
+  skippedRef,
 }: {
   isReporting: boolean;
   onClick: (latlng: [number, number]) => void;
+  onDeselect: () => void;
+  hasSelection: boolean;
+  skippedRef: React.MutableRefObject<boolean>;
 }) {
   useMapEvents({
     click(e) {
+      if (skippedRef.current) {
+        skippedRef.current = false;
+        return;
+      }
       if (isReporting) {
         onClick([e.latlng.lat, e.latlng.lng]);
+      } else if (hasSelection) {
+        onDeselect();
       }
     },
   });
@@ -66,11 +79,31 @@ function BoundsReporter({
   return null;
 }
 
+function UserLocationHandler({
+  userPosition,
+}: {
+  userPosition: [number, number] | null;
+}) {
+  const map = useMap();
+  const hasFlown = useRef(false);
+
+  useEffect(() => {
+    if (!userPosition || hasFlown.current) return;
+    hasFlown.current = true;
+    map.flyTo(userPosition, 15, { duration: 1.5 });
+  }, [userPosition, map]);
+
+  return null;
+}
+
 const MapView = React.memo(function MapView({
   incidents,
   clusters,
   isReporting,
   pendingLocation,
+  polygonColorMode,
+  selectedClusterId,
+  onClusterSelect,
   onReport,
   onSelectCrime,
   onCancelReport,
@@ -80,6 +113,9 @@ const MapView = React.memo(function MapView({
   clusters: CrimeCluster[];
   isReporting: boolean;
   pendingLocation: [number, number] | null;
+  polygonColorMode: 'gray' | 'color';
+  selectedClusterId: string | null;
+  onClusterSelect: (id: string | null) => void;
   onReport: (latlng: [number, number]) => void;
   onSelectCrime: (crimeType: string, age: string, latlng: [number, number]) => void;
   onCancelReport: () => void;
@@ -93,6 +129,30 @@ const MapView = React.memo(function MapView({
     setSelectedType(null);
   }, [pendingLocation]);
 
+  const [userPosition, setUserPosition] = useState<[number, number] | null>(null);
+
+  useEffect(() => {
+    if (!('geolocation' in navigator)) return;
+
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => setUserPosition([pos.coords.latitude, pos.coords.longitude]),
+      (err) => console.warn('GPS:', err.message),
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 },
+    );
+
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, []);
+
+  const polygonClickedRef = useRef(false);
+
+  const incidentClusterMap = useRef<Map<string, string>>(new Map());
+  incidentClusterMap.current.clear();
+  for (const c of clusters) {
+    for (const inc of c.incidents) {
+      incidentClusterMap.current.set(inc.id, c.id);
+    }
+  }
+
   return (
     <MapContainer
       key="map"
@@ -103,11 +163,11 @@ const MapView = React.memo(function MapView({
       style={{ height: '100%', width: '100%' }}
     >
       <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/">CARTO</a>'
+        url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
       />
 
-      <ClickHandler isReporting={isReporting} onClick={onReport} />
+      <ClickHandler isReporting={isReporting} onClick={onReport} onDeselect={() => onClusterSelect(null)} hasSelection={selectedClusterId !== null} skippedRef={polygonClickedRef} />
       <BoundsReporter onBoundsChange={onBoundsChange} />
 
       {pendingLocation && (
@@ -190,30 +250,26 @@ const MapView = React.memo(function MapView({
       )}
 
       {clusters.filter((c) => c.polygon.length >= 3).map((cluster) => {
-        const ages = cluster.incidents.map((i) => i.age);
-        const mostRecentAge = ages.sort((a, b) => 
-          REPORT_AGE_OPTIONS.findIndex(o => o.id === a) - REPORT_AGE_OPTIONS.findIndex(o => o.id === b)
-        )[0];
-        const recencyColor = getRecencyColor(mostRecentAge);
+        const isSelected = cluster.id === selectedClusterId;
+        const baseColor = polygonColorMode === 'color' ? getSafetyColor(cluster.safetyScore) : '#6b7280';
+        const color = isSelected ? '#3b82f6' : baseColor;
         return (
           <Polygon
             key={cluster.id}
             positions={cluster.polygon}
             pathOptions={{
-              color: recencyColor,
-              fillColor: recencyColor,
-              fillOpacity: 0.35,
-              weight: 2,
+              color,
+              fillColor: color,
+              fillOpacity: isSelected ? 0.4 : 0.25,
+              weight: isSelected ? 3 : 1.5,
             }}
-          >
-            <Tooltip>
-              <strong>Crime Cluster</strong>
-              <br />
-              Incidents: {cluster.incidents.length}
-              <br />
-              Safety: {cluster.safetyScore}/100
-            </Tooltip>
-          </Polygon>
+            eventHandlers={{
+              click: () => {
+                polygonClickedRef.current = true;
+                onClusterSelect(cluster.id);
+              },
+            }}
+          />
         );
       })}
 
@@ -260,6 +316,15 @@ const MapView = React.memo(function MapView({
                 iconSize: [28, 28],
                 iconAnchor: [14, 14],
               })}
+              eventHandlers={{
+                click: () => {
+                  const clusterId = incidentClusterMap.current.get(inc.id);
+                  if (clusterId) {
+                    polygonClickedRef.current = true;
+                    onClusterSelect(clusterId);
+                  }
+                },
+              }}
             >
               <Tooltip direction="top" offset={[0, -14]} className="crime-tooltip">
                 <div className="min-w-[200px] text-left">
@@ -295,6 +360,22 @@ const MapView = React.memo(function MapView({
           </React.Fragment>
         );
       })}
+
+      {userPosition && (
+        <Marker
+          position={userPosition}
+          icon={L.divIcon({
+            className: '',
+            html: `<div style="width:24px;height:24px;background:#3b82f6;border:3px solid white;border-radius:50%;box-shadow:0 0 0 2px #3b82f6,0 2px 6px rgba(0,0,0,0.3)"></div>`,
+            iconSize: [24, 24],
+            iconAnchor: [12, 12],
+          })}
+        >
+          <Tooltip direction="top" offset={[0, -14]}>
+            <div className="text-xs font-medium">Your Location</div>
+          </Tooltip>
+        </Marker>
+      )}
 
       {isReporting && !pendingLocation && (
         <div
