@@ -7,10 +7,12 @@ import {
   type CrimeCluster,
   getSafetyColor,
   getSafetyLabel,
+  getRecencyColor,
   clusterIncidents,
 } from './data';
 import type { MapBounds } from './MapView';
 import ReportCard from './ReportCard';
+import { useProximityAlerts } from './useProximityAlerts';
 
 const MapView = dynamic(() => import('./MapView'), { ssr: false });
 
@@ -81,6 +83,14 @@ export default function Home() {
     () => [...visibleClusters].sort((a, b) => a.safetyScore - b.safetyScore),
     [visibleClusters],
   );
+
+  const {
+    enabled: alertsEnabled,
+    toggle: toggleAlerts,
+    watching,
+    error: alertError,
+    nearbyClusters,
+  } = useProximityAlerts(clusters);
 
   const centerLabel = useMemo(() => {
     if (!bounds) return 'Loading...';
@@ -202,6 +212,69 @@ export default function Home() {
             <span>High Crime</span>
             <span>Low Crime</span>
           </div>
+
+          <div className="flex items-center justify-between py-1">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400 shrink-0">
+                Crime Alerts
+              </span>
+              {alertsEnabled && (
+                <span className="flex items-center gap-1">
+                  {watching ? (
+                    <>
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
+                      </span>
+                      <span className="text-[10px] text-green-600">Watching</span>
+                    </>
+                  ) : (
+                    <span className="text-[10px] text-amber-600">Connecting...</span>
+                  )}
+                </span>
+              )}
+            </div>
+            <button
+              onClick={toggleAlerts}
+              className={`relative w-9 h-5 rounded-full transition-colors cursor-pointer shrink-0 ${
+                alertsEnabled ? 'bg-green-500' : 'bg-zinc-300 dark:bg-zinc-600'
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${
+                  alertsEnabled ? 'translate-x-4' : ''
+                }`}
+              />
+            </button>
+          </div>
+
+          {alertError && (
+            <p className="text-[10px] text-red-500 leading-snug">{alertError}</p>
+          )}
+
+          {nearbyClusters.length > 0 && (
+            <div className="space-y-1">
+              {nearbyClusters.map((nc) => {
+                const dangerColor = getRecencyColor(nc.cluster.incidents[0]?.age ?? 'older');
+                return (
+                  <div
+                    key={nc.cluster.id}
+                    className="flex items-center gap-2 px-2 py-1.5 rounded bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900"
+                  >
+                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: dangerColor }} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] font-medium text-red-700 dark:text-red-400 truncate">
+                        {getSafetyLabel(nc.cluster.safetyScore)} Zone
+                      </p>
+                      <p className="text-[9px] text-red-500/70">
+                        {nc.cluster.incidents.length} incidents · {nc.distance}m away
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
           {isReporting ? (
             <div className="space-y-2">

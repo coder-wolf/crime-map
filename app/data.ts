@@ -211,3 +211,21 @@ export function clusterIncidents(
     };
   }).filter(Boolean) as CrimeCluster[];
 }
+
+export function pointInPolygon(point: [number, number], polygon: [number, number][]): boolean {
+  let inside = false;
+  const n = polygon.length;
+  for (let i = 0, j = n - 1; i < n; j = i++) {
+    const xi = polygon[i][0], yi = polygon[i][1];
+    const xj = polygon[j][0], yj = polygon[j][1];
+    if ((yi > point[1]) !== (yj > point[1]) &&
+        point[0] < ((xj - xi) * (point[1] - yi)) / (yj - yi) + xi) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}
+
+export function metersToDeg(meters: number): number {
+  return meters / 111320;
+}
