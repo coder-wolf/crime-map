@@ -40,15 +40,6 @@ async function postIncident(inc: Incident) {
   }
 }
 
-async function clearIncidents() {
-  try {
-    const res = await fetch('/api/incidents', { method: 'DELETE' });
-    if (!res.ok) console.error('DELETE /api/incidents failed', await res.text());
-  } catch (e) {
-    console.error('DELETE /api/incidents threw', e);
-  }
-}
-
 function formatCoord(n: number, isLat: boolean): string {
   const dir = isLat ? (n >= 0 ? 'N' : 'S') : n >= 0 ? 'E' : 'W';
   return `${Math.abs(n).toFixed(4)}°${dir}`;
@@ -126,11 +117,6 @@ export default function Home() {
   const handleCancelReport = useCallback(() => {
     setPendingLocation(null);
   }, []);
-
-  const handleClear = () => {
-    clearIncidents();
-    setIncidents([]);
-  };
 
   const sidebarWidth = 260;
 
@@ -235,15 +221,6 @@ export default function Home() {
               className="w-full px-3 py-2 text-sm rounded border border-dashed border-zinc-400 dark:border-zinc-600 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors"
             >
               + Report Incident
-            </button>
-          )}
-
-          {incidents.length > 0 && (
-            <button
-              onClick={handleClear}
-              className="w-full px-3 py-1.5 text-xs rounded text-zinc-400 hover:text-red-500 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors"
-            >
-              Clear all ({incidents.length}) incidents
             </button>
           )}
         </div>

@@ -29,3 +29,16 @@ body {
   width: 100%;
   height: 100%;
 }
+
+.leaflet-tooltip.crime-tooltip {
+  background: white;
+  border: 1px solid #e4e4e7;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  padding: 10px;
+  font-family: inherit;
+}
+
+.leaflet-tooltip.crime-tooltip::before {
+  display: none;
+}

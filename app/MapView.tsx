@@ -19,6 +19,7 @@ import {
   REPORT_AGE_OPTIONS,
   getSafetyColor,
   getRecencyColor,
+  getIncidentDetails,
   PRIMARY_RADIUS,
   SECONDARY_RADIUS,
 } from './data';
@@ -216,41 +217,84 @@ const MapView = React.memo(function MapView({
         );
       })}
 
-      {incidents.filter((inc) => Number.isFinite(inc.lat) && Number.isFinite(inc.lng)).map((inc) => (
-        <React.Fragment key={inc.id}>
-          <Circle
-            center={[inc.lat, inc.lng]}
-            radius={SECONDARY_RADIUS * 111000}
-            pathOptions={{
-              color: '#ef4444',
-              fillColor: '#ef4444',
-              fillOpacity: 0.04,
-              weight: 0.5,
-              dashArray: '4 4',
-            }}
-          />
-          <Circle
-            center={[inc.lat, inc.lng]}
-            radius={PRIMARY_RADIUS * 111000}
-            pathOptions={{
-              color: '#ef4444',
-              fillColor: '#ef4444',
-              fillOpacity: 0.08,
-              weight: 1,
-            }}
-          />
-          <Marker
-            position={[inc.lat, inc.lng]}
-            icon={L.divIcon({
-              className: '',
-              html: `<span style="font-size:22px;line-height:1">${CRIME_TYPES.find((c) => c.id === inc.crimeType)?.emoji ?? '❓'}</span>`,
-              iconSize: [28, 28],
-              iconAnchor: [14, 14],
-            })}
-          >
-          </Marker>
-        </React.Fragment>
-      ))}
+      {incidents.filter((inc) => Number.isFinite(inc.lat) && Number.isFinite(inc.lng)).map((inc) => {
+        const ct = CRIME_TYPES.find((c) => c.id === inc.crimeType);
+        const ageLabel = REPORT_AGE_OPTIONS.find((a) => a.id === inc.age)?.label ?? inc.age;
+        const details = getIncidentDetails(inc);
+        const recencyColor = getRecencyColor(inc.age);
+        const formattedDate = details.date.toLocaleDateString('en-US', {
+          month: 'short', day: 'numeric', year: 'numeric',
+        });
+        const formattedTime = details.date.toLocaleTimeString('en-US', {
+          hour: '2-digit', minute: '2-digit',
+        });
+
+        return (
+          <React.Fragment key={inc.id}>
+            <Circle
+              center={[inc.lat, inc.lng]}
+              radius={SECONDARY_RADIUS * 111000}
+              pathOptions={{
+                color: recencyColor,
+                fillColor: recencyColor,
+                fillOpacity: 0.04,
+                weight: 0.5,
+                dashArray: '4 4',
+              }}
+            />
+            <Circle
+              center={[inc.lat, inc.lng]}
+              radius={PRIMARY_RADIUS * 111000}
+              pathOptions={{
+                color: recencyColor,
+                fillColor: recencyColor,
+                fillOpacity: 0.08,
+                weight: 1,
+              }}
+            />
+            <Marker
+              position={[inc.lat, inc.lng]}
+              icon={L.divIcon({
+                className: '',
+                html: `<span style="font-size:22px;line-height:1">${ct?.emoji ?? '❓'}</span>`,
+                iconSize: [28, 28],
+                iconAnchor: [14, 14],
+              })}
+            >
+              <Tooltip direction="top" offset={[0, -14]} className="crime-tooltip">
+                <div className="min-w-[200px] text-left">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="text-lg">{ct?.emoji ?? '❓'}</span>
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-zinc-800 leading-tight">
+                        {ct?.label ?? inc.crimeType}
+                      </p>
+                      <p className="text-[10px] text-zinc-400 font-mono">{details.caseNumber}</p>
+                    </div>
+                    <span
+                      className="text-[10px] font-medium px-1.5 py-0.5 rounded"
+                      style={{
+                        backgroundColor: recencyColor + '22',
+                        color: recencyColor,
+                      }}
+                    >
+                      {ageLabel}
+                    </span>
+                  </div>
+                  <p className="text-xs text-zinc-600 mb-1.5 leading-snug">{details.description}</p>
+                  <div className="flex items-center justify-between text-[10px] text-zinc-400">
+                    <span>{details.reportedBy}</span>
+                    <span>{formattedDate} {formattedTime}</span>
+                  </div>
+                  <div className="text-[10px] text-zinc-400 mt-1">
+                    Status: <span className="font-medium text-zinc-500">{details.status}</span>
+                  </div>
+                </div>
+              </Tooltip>
+            </Marker>
+          </React.Fragment>
+        );
+      })}
 
       {isReporting && !pendingLocation && (
         <div

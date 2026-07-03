@@ -70,6 +70,39 @@ export function getRecencyColor(age: string): string {
   }
 }
 
+const DUMMY_DESCRIPTIONS: Record<string, string[]> = {
+  theft: ['Wallet stolen from bag', 'Phone snatched on sidewalk', 'Bicycle taken from rack', 'Package stolen from porch'],
+  robbery: ['Armed robbery at convenience store', 'Mugging on dark street', 'Bank robbery suspect seen fleeing'],
+  assault: ['Physical altercation outside bar', 'Person attacked in parking lot', 'Schoolyard fight turned violent'],
+  burglary: ['Apartment broken into during day', 'House burglary through back window', 'Office equipment stolen overnight'],
+  vandalism: ['Car window smashed', 'Graffiti on building wall', 'Street sign damaged'],
+  murder: ['Suspicious death under investigation', 'Shooting victim found in alley', 'Stabbing reported in residence'],
+  drugs: ['Suspected drug deal observed', 'Found drug paraphernalia in park', 'Suspicious chemical odor reported'],
+  fraud: ['Credit card scam reported', 'Phishing email targeting residents', 'Fake charity collection spotted'],
+  other: ['Suspicious activity reported', 'Noise complaint with possible crime', 'Welfare check requested'],
+};
+
+const DUMMY_REPORTERS = [
+  'Anonymous Citizen', 'Local Resident', 'Neighborhood Watch', 'Security Guard',
+  'Shop Owner', 'Bystander', 'Off-duty Officer', 'Community Member',
+];
+
+const DUMMY_STATUSES = ['Under Investigation', 'Active Case', 'Pending Review', 'Open'];
+
+export function getIncidentDetails(inc: Incident) {
+  const descs = DUMMY_DESCRIPTIONS[inc.crimeType] ?? DUMMY_DESCRIPTIONS.other;
+  const desc = descs[parseInt(inc.id.slice(-1), 16) % descs.length] ?? descs[0];
+  const reporter = DUMMY_REPORTERS[parseInt(inc.id.slice(-2), 36) % DUMMY_REPORTERS.length] ?? DUMMY_REPORTERS[0];
+  const status = DUMMY_STATUSES[parseInt(inc.id.slice(-1), 16) % DUMMY_STATUSES.length] ?? DUMMY_STATUSES[0];
+
+  const now = new Date();
+  const ageDays: Record<string, number> = { today: 0, '1week': 3, '1month': 15, '6months': 90, '1year': 180, older: 365 };
+  const daysAgo = ageDays[inc.age] ?? 0;
+  const incidentDate = new Date(now.getTime() - daysAgo * 86400000 - Math.floor(Math.random() * 86400000));
+
+  return { description: desc, reportedBy: reporter, date: incidentDate, status, caseNumber: `CR-${inc.id.slice(-6).toUpperCase()}` };
+}
+
 function isValidCoord(v: number): boolean {
   return Number.isFinite(v);
 }
