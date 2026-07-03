@@ -212,8 +212,8 @@ export default function Home() {
             }}
           />
           <div className="flex justify-between text-xs text-zinc-400 mt-1">
-            <span>Dangerous</span>
-            <span>Safe</span>
+            <span>High Crime</span>
+            <span>Low Crime</span>
           </div>
 
           {isReporting ? (

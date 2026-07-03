@@ -44,11 +44,11 @@ export function getSafetyColor(score: number): string {
 }
 
 export function getSafetyLabel(score: number): string {
-  if (score >= 80) return 'Very Safe';
-  if (score >= 60) return 'Safe';
-  if (score >= 40) return 'Moderate';
-  if (score >= 20) return 'Dangerous';
-  return 'Very Dangerous';
+  if (score >= 80) return 'Very Low Crime';
+  if (score >= 60) return 'Low Crime';
+  if (score >= 40) return 'Moderate Crime';
+  if (score >= 20) return 'High Crime';
+  return 'Very High Crime';
 }
 
 function isValidCoord(v: number): boolean {
