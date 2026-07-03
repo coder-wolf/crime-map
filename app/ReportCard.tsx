@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { type Incident, CRIME_TYPES, REPORT_AGE_OPTIONS, getSafetyLabel, getSafetyColor } from './data';
+import { type Incident, type CrimeCluster, CRIME_TYPES, REPORT_AGE_OPTIONS, getSafetyLabel, getSafetyColor } from './data';
 import type { MapBounds } from './MapView';
 
 function countBy<T>(items: T[], keyFn: (item: T) => string): [string, number][] {
@@ -19,32 +19,25 @@ function isIncidentVisible(inc: Incident, bounds: MapBounds | null): boolean {
   return inc.lat >= south && inc.lat <= north && inc.lng >= west && inc.lng <= east;
 }
 
-function areaLabel(incidents: Incident[]): string {
-  if (incidents.length === 0) return 'No incidents';
-  if (incidents.length <= 2) return 'Low Crime';
-  if (incidents.length <= 5) return 'Moderate Crime';
-  if (incidents.length <= 10) return 'High Crime';
-  return 'Very High Crime';
-}
-
-function areaScore(incidents: Incident[]): number {
-  if (incidents.length === 0) return 95;
-  const score = Math.max(10, Math.min(95, 110 - incidents.length * 10));
-  return Math.round(score);
-}
-
 export default function ReportCard({
   incidents,
   bounds,
+  selectedCluster,
+  clusterName,
 }: {
   incidents: Incident[];
   bounds: MapBounds | null;
+  selectedCluster: CrimeCluster | null;
+  clusterName: string | null;
 }) {
   const [collapsed, setCollapsed] = useState(true);
 
+  const sourceIncidents = selectedCluster?.incidents ?? incidents;
+  const sourceBounds = selectedCluster ? null : bounds;
+
   const visible = useMemo(
-    () => incidents.filter((inc) => isIncidentVisible(inc, bounds)),
-    [incidents, bounds],
+    () => sourceIncidents.filter((inc) => isIncidentVisible(inc, sourceBounds)),
+    [sourceIncidents, sourceBounds],
   );
 
   const byType = useMemo(
@@ -57,10 +50,24 @@ export default function ReportCard({
     [visible],
   );
 
-  const score = useMemo(() => areaScore(visible), [visible]);
-  const label = useMemo(() => areaLabel(visible), [visible]);
+  const score = selectedCluster?.safetyScore ?? (() => {
+    if (visible.length === 0) return 95;
+    return Math.round(Math.max(10, Math.min(95, 110 - visible.length * 10)));
+  })();
 
-  if (visible.length === 0) return null;
+  const label = selectedCluster ? getSafetyLabel(score) : (() => {
+    if (visible.length === 0) return 'No incidents';
+    if (visible.length <= 2) return 'Low Crime';
+    if (visible.length <= 5) return 'Moderate Crime';
+    if (visible.length <= 10) return 'High Crime';
+    return 'Very High Crime';
+  })();
+
+  const title = selectedCluster
+    ? (clusterName ?? `Cluster (${visible.length})`)
+    : 'Area Report';
+
+  if (visible.length === 0 && !selectedCluster) return null;
 
   return (
     <div className="fixed top-4 right-4 z-[9998] flex flex-col items-end">
@@ -80,16 +87,13 @@ export default function ReportCard({
             onClick={() => setCollapsed(true)}
             className="flex items-center justify-between px-3 py-2.5 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-700 cursor-pointer"
           >
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">
-                Area Report
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: getSafetyColor(score) }} />
+              <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-100 truncate">
+                {title}
               </span>
-              <span
-                className="inline-block w-2 h-2 rounded-full"
-                style={{ backgroundColor: getSafetyColor(score) }}
-              />
             </div>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 shrink-0">
               <span className="text-xs tabular-nums text-zinc-500">{visible.length}</span>
               <span className="text-xs text-zinc-400">▾</span>
             </div>

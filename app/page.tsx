@@ -406,7 +406,12 @@ export default function Home() {
         />
       </main>
 
-      <ReportCard incidents={incidents} bounds={bounds} />
+      <ReportCard
+        incidents={incidents}
+        bounds={bounds}
+        selectedCluster={clusters.find(c => c.id === selectedClusterId) ?? null}
+        clusterName={selectedClusterId ? (clusterNames[selectedClusterId] ?? null) : null}
+      />
     </div>
   );
 }
