@@ -121,9 +121,22 @@ export default function Home() {
         className="h-full overflow-y-auto border-r border-zinc-200 bg-white dark:bg-zinc-950 dark:border-zinc-800 flex flex-col shrink-0 transition-all duration-300 ease-in-out"
         style={{ width: sidebarOpen ? sidebarWidth : 0 }}
       >
-        <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 shrink-0">
-          <h1 className="text-xl font-bold">Crime Map</h1>
-          <p className="text-xs text-zinc-500 truncate">{centerLabel}</p>
+        <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 shrink-0 flex items-center gap-3">
+          <button
+            onClick={() => setSidebarOpen((p) => !p)}
+            className="shrink-0 w-8 h-8 flex items-center justify-center rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+            title="Toggle sidebar"
+          >
+            <svg className="w-5 h-5 text-zinc-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <line x1="3" y1="6" x2="21" y2="6" />
+              <line x1="3" y1="12" x2="21" y2="12" />
+              <line x1="3" y1="18" x2="21" y2="18" />
+            </svg>
+          </button>
+          <div className="min-w-0">
+            <h1 className="text-xl font-bold truncate">Crime Map</h1>
+            <p className="text-xs text-zinc-500 truncate">{centerLabel}</p>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto p-2 space-y-1 min-w-0">
@@ -217,32 +230,19 @@ export default function Home() {
         </div>
       </aside>
 
-      <button
-        onClick={() => setSidebarOpen((p) => !p)}
-        title={sidebarOpen ? 'Hide sidebar' : 'Show sidebar'}
-        className="absolute top-1/2 -translate-y-1/2 z-20 w-7 h-14 flex items-center justify-center bg-white dark:bg-zinc-800 border-zinc-300 dark:border-zinc-600 shadow-lg hover:shadow-xl hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-all cursor-pointer group"
-        style={{
-          left: sidebarOpen ? sidebarWidth - 1 : 0,
-          borderRadius: sidebarOpen ? '0 8px 8px 0' : '0 8px 8px 0',
-          borderWidth: '1px',
-          borderStyle: 'solid',
-          borderLeft: sidebarOpen ? 'none' : undefined,
-        }}
-      >
-        <svg
-          className="w-4 h-4 text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300 transition-colors"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2.5}
+      {!sidebarOpen && (
+        <button
+          onClick={() => setSidebarOpen(true)}
+          className="absolute top-3 left-3 z-20 w-8 h-8 flex items-center justify-center rounded-md bg-white/90 dark:bg-zinc-900/90 backdrop-blur-sm border border-zinc-200 dark:border-zinc-700 shadow-md hover:bg-white dark:hover:bg-zinc-800 transition-all cursor-pointer"
+          title="Show sidebar"
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d={sidebarOpen ? 'M15 19l-7-7 7-7' : 'M9 5l7 7-7 7'}
-          />
-        </svg>
-      </button>
+          <svg className="w-5 h-5 text-zinc-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+          </svg>
+        </button>
+      )}
 
       <main className="flex-1 h-full min-w-0">
         <MapView
