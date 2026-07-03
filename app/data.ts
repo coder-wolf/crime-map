@@ -1,0 +1,131 @@
+export const INCIDENT_RADIUS = 0.002;
+
+export interface Incident {
+  id: string;
+  lat: number;
+  lng: number;
+  label?: string;
+}
+
+export interface CrimeCluster {
+  id: string;
+  incidents: Incident[];
+  polygon: [number, number][];
+  safetyScore: number;
+}
+
+export function getSafetyColor(score: number): string {
+  const hue = (score / 100) * 120;
+  return `hsl(${hue}, 70%, 42%)`;
+}
+
+export function getSafetyLabel(score: number): string {
+  if (score >= 80) return 'Very Safe';
+  if (score >= 60) return 'Safe';
+  if (score >= 40) return 'Moderate';
+  if (score >= 20) return 'Dangerous';
+  return 'Very Dangerous';
+}
+
+function cross(o: [number, number], a: [number, number], b: [number, number]): number {
+  return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+}
+
+function convexHull(points: [number, number][]): [number, number][] {
+  if (points.length < 3) return [];
+
+  const sorted = [...points].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+
+  const lower: [number, number][] = [];
+  for (const p of sorted) {
+    while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0) {
+      lower.pop();
+    }
+    lower.push(p);
+  }
+
+  const upper: [number, number][] = [];
+  for (const p of sorted.reverse()) {
+    while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], p) <= 0) {
+      upper.pop();
+    }
+    upper.push(p);
+  }
+
+  lower.pop();
+  upper.pop();
+  return [...lower, ...upper];
+}
+
+function bufferPoint(lat: number, lng: number, radiusDeg: number): [number, number][] {
+  const points: [number, number][] = [];
+  const steps = 12;
+  for (let i = 0; i < steps; i++) {
+    const angle = (i / steps) * Math.PI * 2;
+    points.push([lat + Math.cos(angle) * radiusDeg, lng + Math.sin(angle) * radiusDeg]);
+  }
+  return points;
+}
+
+function dist(a: [number, number], b: [number, number]): number {
+  const dx = a[0] - b[0];
+  const dy = a[1] - b[1];
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+export function clusterIncidents(
+  incidents: Incident[],
+  maxDist: number = 0.008
+): CrimeCluster[] {
+  if (incidents.length === 0) return [];
+
+  const points = incidents.map((i) => [i.lat, i.lng] as [number, number]);
+  const assigned = new Set<number>();
+  const rawClusters: number[][] = [];
+
+  for (let i = 0; i < points.length; i++) {
+    if (assigned.has(i)) continue;
+
+    const cluster: number[] = [i];
+    assigned.add(i);
+
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (let j = 0; j < points.length; j++) {
+        if (assigned.has(j)) continue;
+        const isNear = cluster.some((idx) => dist(points[idx], points[j]) <= maxDist);
+        if (isNear) {
+          cluster.push(j);
+          assigned.add(j);
+          changed = true;
+        }
+      }
+    }
+
+    rawClusters.push(cluster);
+  }
+
+  const maxCount = Math.max(...rawClusters.map((c) => c.length), 1);
+
+  return rawClusters.map((idxList) => {
+    const clusterIncidents = idxList.map((idx) => incidents[idx]);
+    const clusterPoints = clusterIncidents.map(
+      (inc) => [inc.lat, inc.lng] as [number, number]
+    );
+    const buffered = clusterPoints.flatMap((p) =>
+      bufferPoint(p[0], p[1], INCIDENT_RADIUS)
+    );
+    const polygon = convexHull(buffered);
+    if (polygon.length === 0) return null;
+    const count = clusterPoints.length;
+    const safetyScore = Math.max(10, 100 - (count / Math.max(maxCount, 1)) * 100);
+
+    return {
+      id: `cluster-${clusterIncidents[0].id}`,
+      incidents: clusterIncidents,
+      polygon,
+      safetyScore: Math.round(safetyScore),
+    };
+  }).filter(Boolean) as CrimeCluster[];
+}
