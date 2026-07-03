@@ -187,7 +187,7 @@ const MapView = React.memo(function MapView({
         </Popup>
       )}
 
-      {clusters.map((cluster) => (
+      {clusters.filter((c) => c.polygon.length >= 3).map((cluster) => (
         <Polygon
           key={cluster.id}
           positions={cluster.polygon}

@@ -51,6 +51,14 @@ export function getSafetyLabel(score: number): string {
   return 'Very Dangerous';
 }
 
+function isValidCoord(v: number): boolean {
+  return Number.isFinite(v);
+}
+
+function isValidPoint(p: [number, number]): boolean {
+  return isValidCoord(p[0]) && isValidCoord(p[1]);
+}
+
 function cross(o: [number, number], a: [number, number], b: [number, number]): number {
   return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
 }
@@ -137,9 +145,9 @@ export function clusterIncidents(
     );
     const buffered = clusterPoints.flatMap((p) =>
       bufferPoint(p[0], p[1], SECONDARY_RADIUS)
-    );
+    ).filter(isValidPoint);
     const polygon = convexHull(buffered);
-    if (polygon.length === 0) return null;
+    if (polygon.length < 3) return null;
     const count = clusterPoints.length;
     const safetyScore = Math.max(10, Math.min(95, 110 - count * 10));
 
