@@ -18,6 +18,7 @@ import {
   CRIME_TYPES,
   REPORT_AGE_OPTIONS,
   getSafetyColor,
+  getRecencyColor,
   PRIMARY_RADIUS,
   SECONDARY_RADIUS,
 } from './data';
@@ -187,26 +188,33 @@ const MapView = React.memo(function MapView({
         </Popup>
       )}
 
-      {clusters.filter((c) => c.polygon.length >= 3).map((cluster) => (
-        <Polygon
-          key={cluster.id}
-          positions={cluster.polygon}
-          pathOptions={{
-            color: getSafetyColor(cluster.safetyScore),
-            fillColor: getSafetyColor(cluster.safetyScore),
-            fillOpacity: 0.4,
-            weight: 2,
-          }}
-        >
-          <Tooltip>
-            <strong>Crime Cluster</strong>
-            <br />
-            Incidents: {cluster.incidents.length}
-            <br />
-            Safety: {cluster.safetyScore}/100
-          </Tooltip>
-        </Polygon>
-      ))}
+      {clusters.filter((c) => c.polygon.length >= 3).map((cluster) => {
+        const ages = cluster.incidents.map((i) => i.age);
+        const mostRecentAge = ages.sort((a, b) => 
+          REPORT_AGE_OPTIONS.findIndex(o => o.id === a) - REPORT_AGE_OPTIONS.findIndex(o => o.id === b)
+        )[0];
+        const recencyColor = getRecencyColor(mostRecentAge);
+        return (
+          <Polygon
+            key={cluster.id}
+            positions={cluster.polygon}
+            pathOptions={{
+              color: recencyColor,
+              fillColor: recencyColor,
+              fillOpacity: 0.35,
+              weight: 2,
+            }}
+          >
+            <Tooltip>
+              <strong>Crime Cluster</strong>
+              <br />
+              Incidents: {cluster.incidents.length}
+              <br />
+              Safety: {cluster.safetyScore}/100
+            </Tooltip>
+          </Polygon>
+        );
+      })}
 
       {incidents.filter((inc) => Number.isFinite(inc.lat) && Number.isFinite(inc.lng)).map((inc) => (
         <React.Fragment key={inc.id}>

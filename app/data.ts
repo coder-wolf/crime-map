@@ -14,12 +14,12 @@ export const CRIME_TYPES = [
 ] as const;
 
 export const REPORT_AGE_OPTIONS = [
-  { id: 'today', label: 'Today' },
-  { id: '1week', label: '1 Week' },
-  { id: '1month', label: '1 Month' },
-  { id: '6months', label: '6 Months' },
-  { id: '1year', label: '1 Year' },
-  { id: 'older', label: 'Older' },
+  { id: 'today', label: 'Today', color: '#ef4444' },
+  { id: '1week', label: '1 Week', color: '#f97316' },
+  { id: '1month', label: '1 Month', color: '#fde047' },
+  { id: '6months', label: '6 Months', color: '#84cc16' },
+  { id: '1year', label: '1 Year', color: '#4ade80' },
+  { id: 'older', label: 'Older', color: '#22c55e' },
 ] as const;
 
 export interface Incident {
@@ -49,6 +49,25 @@ export function getSafetyLabel(score: number): string {
   if (score >= 40) return 'Moderate Crime';
   if (score >= 20) return 'High Crime';
   return 'Very High Crime';
+}
+
+export function getRecencyColor(age: string): string {
+  switch (age) {
+    case 'today':
+      return '#ef4444';
+    case '1week':
+      return '#f97316';
+    case '1month':
+      return '#fde047';
+    case '6months':
+      return '#84cc16';
+    case '1year':
+      return '#4ade80';
+    case 'older':
+      return '#22c55e';
+    default:
+      return '#22c55e';
+  }
 }
 
 function isValidCoord(v: number): boolean {
