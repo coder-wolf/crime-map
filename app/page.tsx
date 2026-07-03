@@ -196,7 +196,7 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="flex h-screen w-screen relative overflow-hidden">
+    <div className="flex w-screen relative overflow-hidden" style={{ height: '100dvh' }}>
       <aside
         className="h-full overflow-y-auto border-r border-zinc-200 bg-white dark:bg-zinc-950 dark:border-zinc-800 flex flex-col shrink-0 relative"
         style={{ width: sidebarOpen ? sidebarWidth : 0, transition: sidebarOpen ? 'none' : 'width 0.3s ease-in-out' }}
