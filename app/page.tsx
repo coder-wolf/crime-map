@@ -230,20 +230,21 @@ export default function Home() {
         </div>
       </aside>
 
-      <main className="flex-1 h-full min-w-0 relative">
-        {!sidebarOpen && (
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="absolute top-3 left-3 z-30 w-9 h-9 flex items-center justify-center rounded-md bg-white/95 dark:bg-zinc-800/95 backdrop-blur-sm border border-zinc-300 dark:border-zinc-600 shadow-lg hover:bg-white dark:hover:bg-zinc-700 transition-all cursor-pointer"
-            title="Show sidebar"
-          >
-            <svg className="w-5 h-5 text-zinc-600 dark:text-zinc-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-              <line x1="3" y1="6" x2="21" y2="6" />
-              <line x1="3" y1="12" x2="21" y2="12" />
-              <line x1="3" y1="18" x2="21" y2="18" />
-            </svg>
-          </button>
-        )}
+      {!sidebarOpen && (
+        <button
+          onClick={() => setSidebarOpen(true)}
+          className="fixed top-3 left-3 z-[9999] w-9 h-9 flex items-center justify-center rounded-md bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-600 shadow-lg hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-all cursor-pointer"
+          title="Show sidebar"
+        >
+          <svg className="w-5 h-5 text-zinc-600 dark:text-zinc-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+          </svg>
+        </button>
+      )}
+
+      <main className="flex-1 h-full min-w-0">
         <MapView
           incidents={incidents}
           clusters={clusters}
