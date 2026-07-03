@@ -4,8 +4,6 @@ An interactive crime heatmap built with Next.js. Report incidents by clicking on
 
 **Live:** [crime-map-theta.vercel.app](https://crime-map-theta.vercel.app)
 
-![Crime Map screenshot](screenshot.png)
-
 ---
 
 ## Features
