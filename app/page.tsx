@@ -208,7 +208,7 @@ export default function Home() {
             className="h-3 rounded-full"
             style={{
               background:
-                'linear-gradient(to right, #d0312d, #e06b2b, #e8a830, #7ebc42, #2d8a4e)',
+                'linear-gradient(to right, #e62e2e, #e65731, #d97731, #c99833, #b8b333)',
             }}
           />
           <div className="flex justify-between text-xs text-zinc-400 mt-1">

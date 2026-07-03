@@ -39,8 +39,8 @@ export interface CrimeCluster {
 }
 
 export function getSafetyColor(score: number): string {
-  const hue = (score / 100) * 120;
-  return `hsl(${hue}, 70%, 42%)`;
+  const hue = (score / 100) * 45;
+  return `hsl(${hue}, 80%, 50%)`;
 }
 
 export function getSafetyLabel(score: number): string {
