@@ -104,12 +104,13 @@ export default function Home() {
   );
 
   const handleCrimeSelect = useCallback(
-    (crimeType: string, latlng: [number, number]) => {
+    (crimeType: string, age: string, latlng: [number, number]) => {
       const inc: Incident = {
         id: `inc-${Date.now()}`,
         lat: latlng[0],
         lng: latlng[1],
         crimeType,
+        age,
       };
       postIncident(inc);
       setIncidents((prev) => [...prev, inc]);

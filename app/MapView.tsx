@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import L from 'leaflet';
 import {
   MapContainer,
@@ -16,6 +16,7 @@ import {
   type Incident,
   type CrimeCluster,
   CRIME_TYPES,
+  REPORT_AGE_OPTIONS,
   getSafetyColor,
   PRIMARY_RADIUS,
   SECONDARY_RADIUS,
@@ -78,10 +79,18 @@ const MapView = React.memo(function MapView({
   isReporting: boolean;
   pendingLocation: [number, number] | null;
   onReport: (latlng: [number, number]) => void;
-  onSelectCrime: (crimeType: string, latlng: [number, number]) => void;
+  onSelectCrime: (crimeType: string, age: string, latlng: [number, number]) => void;
   onCancelReport: () => void;
   onBoundsChange: (bounds: MapBounds) => void;
 }) {
+  const [step, setStep] = useState<'type' | 'age'>('type');
+  const [selectedType, setSelectedType] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    setStep('type');
+    setSelectedType(null);
+  }, [pendingLocation]);
+
   return (
     <MapContainer
       key="map"
@@ -101,9 +110,18 @@ const MapView = React.memo(function MapView({
 
       {pendingLocation && (
         <Popup position={pendingLocation}>
-          <div className="min-w-[200px]">
+          <div className="min-w-[220px]">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-semibold text-zinc-800">Report Incident</h3>
+              {step === 'age' ? (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setStep('type'); }}
+                  className="text-xs text-zinc-500 hover:text-zinc-800 cursor-pointer"
+                >
+                  ← Back
+                </button>
+              ) : (
+                <h3 className="text-sm font-semibold text-zinc-800">Report Incident</h3>
+              )}
               <button
                 onClick={(e) => { e.stopPropagation(); onCancelReport(); }}
                 className="text-xs text-zinc-400 hover:text-zinc-700 cursor-pointer"
@@ -111,23 +129,60 @@ const MapView = React.memo(function MapView({
                 ✕
               </button>
             </div>
-            <p className="text-[11px] text-zinc-500 mb-2">
-              What type of crime occurred here?
-            </p>
-            <div className="grid grid-cols-3 gap-1.5">
-              {CRIME_TYPES.map((ct) => (
-                <button
-                  key={ct.id}
-                  onClick={(e) => { e.stopPropagation(); onSelectCrime(ct.id, pendingLocation); }}
-                  className="flex flex-col items-center gap-0.5 px-2 py-1.5 rounded border border-zinc-200 hover:border-zinc-400 bg-white hover:bg-zinc-50 transition-colors cursor-pointer"
-                >
-                  <span className="text-base leading-none">{ct.emoji}</span>
-                  <span className="text-[10px] text-zinc-600 leading-tight text-center">
-                    {ct.label}
+
+            {step === 'type' && (
+              <>
+                <p className="text-[11px] text-zinc-500 mb-2">
+                  What type of crime?
+                </p>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {CRIME_TYPES.map((ct) => (
+                    <button
+                      key={ct.id}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedType(ct.id);
+                        setStep('age');
+                      }}
+                      className="flex flex-col items-center gap-0.5 px-2 py-1.5 rounded border border-zinc-200 hover:border-zinc-400 bg-white hover:bg-zinc-50 transition-colors cursor-pointer"
+                    >
+                      <span className="text-base leading-none">{ct.emoji}</span>
+                      <span className="text-[10px] text-zinc-600 leading-tight text-center">
+                        {ct.label}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {step === 'age' && selectedType && (
+              <>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-base">{CRIME_TYPES.find((c) => c.id === selectedType)?.emoji}</span>
+                  <span className="text-sm font-medium text-zinc-700">
+                    {CRIME_TYPES.find((c) => c.id === selectedType)?.label}
                   </span>
-                </button>
-              ))}
-            </div>
+                </div>
+                <p className="text-[11px] text-zinc-500 mb-2">
+                  How recent was this crime?
+                </p>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {REPORT_AGE_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.id}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSelectCrime(selectedType, opt.id, pendingLocation);
+                      }}
+                      className="px-3 py-2 rounded border border-zinc-200 hover:border-zinc-400 bg-white hover:bg-zinc-50 text-xs text-zinc-700 transition-colors cursor-pointer"
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         </Popup>
       )}

@@ -13,11 +13,21 @@ export const CRIME_TYPES = [
   { id: 'other', label: 'Other', emoji: '❓' },
 ] as const;
 
+export const REPORT_AGE_OPTIONS = [
+  { id: 'today', label: 'Today' },
+  { id: '1week', label: '1 Week' },
+  { id: '1month', label: '1 Month' },
+  { id: '6months', label: '6 Months' },
+  { id: '1year', label: '1 Year' },
+  { id: 'older', label: 'Older' },
+] as const;
+
 export interface Incident {
   id: string;
   lat: number;
   lng: number;
   crimeType: string;
+  age: string;
   label?: string;
 }
 
