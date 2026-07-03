@@ -208,7 +208,7 @@ const MapView = React.memo(function MapView({
         </Polygon>
       ))}
 
-      {incidents.map((inc) => (
+      {incidents.filter((inc) => Number.isFinite(inc.lat) && Number.isFinite(inc.lng)).map((inc) => (
         <React.Fragment key={inc.id}>
           <Circle
             center={[inc.lat, inc.lng]}

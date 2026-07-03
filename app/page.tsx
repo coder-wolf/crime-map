@@ -17,7 +17,10 @@ async function fetchIncidents(): Promise<Incident[]> {
   try {
     const res = await fetch('/api/incidents');
     if (!res.ok) return [];
-    return await res.json();
+    const data = await res.json();
+    return data.filter(
+      (d: Incident) => Number.isFinite(d.lat) && Number.isFinite(d.lng)
+    );
   } catch {
     return [];
   }
