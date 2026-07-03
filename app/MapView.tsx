@@ -1,17 +1,21 @@
 'use client';
 
 import React from 'react';
+import L from 'leaflet';
 import {
   MapContainer,
   TileLayer,
   Polygon,
   Circle,
+  Marker,
+  Popup,
   Tooltip,
   useMapEvents,
 } from 'react-leaflet';
 import {
   type Incident,
   type CrimeCluster,
+  CRIME_TYPES,
   getSafetyColor,
   PRIMARY_RADIUS,
   SECONDARY_RADIUS,
@@ -63,13 +67,19 @@ const MapView = React.memo(function MapView({
   incidents,
   clusters,
   isReporting,
+  pendingLocation,
   onReport,
+  onSelectCrime,
+  onCancelReport,
   onBoundsChange,
 }: {
   incidents: Incident[];
   clusters: CrimeCluster[];
   isReporting: boolean;
+  pendingLocation: [number, number] | null;
   onReport: (latlng: [number, number]) => void;
+  onSelectCrime: (crimeType: string, latlng: [number, number]) => void;
+  onCancelReport: () => void;
   onBoundsChange: (bounds: MapBounds) => void;
 }) {
   return (
@@ -88,6 +98,39 @@ const MapView = React.memo(function MapView({
 
       <ClickHandler isReporting={isReporting} onClick={onReport} />
       <BoundsReporter onBoundsChange={onBoundsChange} />
+
+      {pendingLocation && (
+        <Popup position={pendingLocation}>
+          <div className="min-w-[200px]">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-semibold text-zinc-800">Report Incident</h3>
+              <button
+                onClick={(e) => { e.stopPropagation(); onCancelReport(); }}
+                className="text-xs text-zinc-400 hover:text-zinc-700 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+            <p className="text-[11px] text-zinc-500 mb-2">
+              What type of crime occurred here?
+            </p>
+            <div className="grid grid-cols-3 gap-1.5">
+              {CRIME_TYPES.map((ct) => (
+                <button
+                  key={ct.id}
+                  onClick={(e) => { e.stopPropagation(); onSelectCrime(ct.id, pendingLocation); }}
+                  className="flex flex-col items-center gap-0.5 px-2 py-1.5 rounded border border-zinc-200 hover:border-zinc-400 bg-white hover:bg-zinc-50 transition-colors cursor-pointer"
+                >
+                  <span className="text-base leading-none">{ct.emoji}</span>
+                  <span className="text-[10px] text-zinc-600 leading-tight text-center">
+                    {ct.label}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </Popup>
+      )}
 
       {clusters.map((cluster) => (
         <Polygon
@@ -133,26 +176,20 @@ const MapView = React.memo(function MapView({
               weight: 1,
             }}
           />
-          <Circle
-            center={[inc.lat, inc.lng]}
-            radius={8}
-            pathOptions={{
-              color: '#ef4444',
-              fillColor: '#ef4444',
-              fillOpacity: 0.9,
-              weight: 2,
-            }}
+          <Marker
+            position={[inc.lat, inc.lng]}
+            icon={L.divIcon({
+              className: '',
+              html: `<span style="font-size:22px;line-height:1">${CRIME_TYPES.find((c) => c.id === inc.crimeType)?.emoji ?? '❓'}</span>`,
+              iconSize: [28, 28],
+              iconAnchor: [14, 14],
+            })}
           >
-            <Tooltip>
-              {inc.label ?? 'Incident'}
-              <br />
-              {inc.lat.toFixed(4)}, {inc.lng.toFixed(4)}
-            </Tooltip>
-          </Circle>
+          </Marker>
         </React.Fragment>
       ))}
 
-      {isReporting && (
+      {isReporting && !pendingLocation && (
         <div
           className="leaflet-top leaflet-right"
           style={{ pointerEvents: 'none' }}

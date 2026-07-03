@@ -64,6 +64,7 @@ function isClusterVisible(
 export default function Home() {
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [isReporting, setIsReporting] = useState(false);
+  const [pendingLocation, setPendingLocation] = useState<[number, number] | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [bounds, setBounds] = useState<MapBounds | null>(null);
 
@@ -96,17 +97,30 @@ export default function Home() {
 
   const handleMapClick = useCallback(
     (latlng: [number, number]) => {
-      if (!isReporting) return;
+      if (!isReporting || pendingLocation) return;
+      setPendingLocation(latlng);
+    },
+    [isReporting, pendingLocation],
+  );
+
+  const handleCrimeSelect = useCallback(
+    (crimeType: string, latlng: [number, number]) => {
       const inc: Incident = {
         id: `inc-${Date.now()}`,
         lat: latlng[0],
         lng: latlng[1],
+        crimeType,
       };
       postIncident(inc);
       setIncidents((prev) => [...prev, inc]);
+      setPendingLocation(null);
     },
-    [isReporting],
+    [],
   );
+
+  const handleCancelReport = useCallback(() => {
+    setPendingLocation(null);
+  }, []);
 
   const handleClear = () => {
     clearIncidents();
@@ -204,7 +218,7 @@ export default function Home() {
                 Click anywhere on the map to report an incident.
               </p>
               <button
-                onClick={() => setIsReporting(false)}
+                onClick={() => { setIsReporting(false); setPendingLocation(null); }}
                 className="w-full px-3 py-2 text-sm rounded border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors"
               >
                 Done Reporting
@@ -249,7 +263,10 @@ export default function Home() {
           incidents={incidents}
           clusters={clusters}
           isReporting={isReporting}
+          pendingLocation={pendingLocation}
           onReport={handleMapClick}
+          onSelectCrime={handleCrimeSelect}
+          onCancelReport={handleCancelReport}
           onBoundsChange={setBounds}
         />
       </main>

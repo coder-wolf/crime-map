@@ -1,10 +1,23 @@
 export const PRIMARY_RADIUS = 0.0005;
 export const SECONDARY_RADIUS = 0.001;
 
+export const CRIME_TYPES = [
+  { id: 'theft', label: 'Theft', emoji: '👜' },
+  { id: 'robbery', label: 'Robbery', emoji: '🔫' },
+  { id: 'assault', label: 'Assault', emoji: '👊' },
+  { id: 'burglary', label: 'Burglary', emoji: '🚪' },
+  { id: 'vandalism', label: 'Vandalism', emoji: '💢' },
+  { id: 'murder', label: 'Murder', emoji: '⚰️' },
+  { id: 'drugs', label: 'Drug-related', emoji: '💊' },
+  { id: 'fraud', label: 'Fraud', emoji: '📄' },
+  { id: 'other', label: 'Other', emoji: '❓' },
+] as const;
+
 export interface Incident {
   id: string;
   lat: number;
   lng: number;
+  crimeType: string;
   label?: string;
 }
 
