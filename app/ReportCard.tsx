@@ -40,7 +40,7 @@ export default function ReportCard({
   incidents: Incident[];
   bounds: MapBounds | null;
 }) {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
 
   const visible = useMemo(
     () => incidents.filter((inc) => isIncidentVisible(inc, bounds)),
@@ -60,83 +60,88 @@ export default function ReportCard({
   const score = useMemo(() => areaScore(visible), [visible]);
   const label = useMemo(() => areaLabel(visible), [visible]);
 
+  if (visible.length === 0) return null;
+
   return (
-    <div className="fixed bottom-4 right-4 z-[9998] w-64 max-h-[60vh] flex flex-col rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-xl overflow-hidden transition-all duration-200">
-      <button
-        onClick={() => setCollapsed((p) => !p)}
-        className="flex items-center justify-between px-3 py-2.5 bg-zinc-50 dark:bg-zinc-800 border-b border-zinc-200 dark:border-zinc-700 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-750 transition-colors"
-      >
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">
-            Area Report
-          </span>
-          <span
-            className="inline-block w-2 h-2 rounded-full"
-            style={{ backgroundColor: getSafetyColor(score) }}
-          />
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="text-xs tabular-nums text-zinc-500">{visible.length}</span>
-          <span className="text-xs text-zinc-400">{collapsed ? '▸' : '▾'}</span>
-        </div>
-      </button>
-
-      {!collapsed && (
-        <div className="flex-1 overflow-y-auto p-3 space-y-3 text-xs text-zinc-700 dark:text-zinc-300">
-          {visible.length === 0 && (
-            <p className="text-zinc-400 text-center py-4">No incidents in this area.</p>
-          )}
-
-          {byType.length > 0 && (
-            <div>
-              <p className="font-medium text-zinc-500 mb-1.5 uppercase tracking-wider text-[10px]">
-                By Crime Type
-              </p>
-              <div className="space-y-1">
-                {byType.map(([typeId, count]) => {
-                  const ct = CRIME_TYPES.find((c) => c.id === typeId);
-                  return (
-                    <div key={typeId} className="flex items-center justify-between">
-                      <span>
-                        {ct?.emoji ?? '❓'} {ct?.label ?? typeId}
-                      </span>
-                      <span className="font-semibold tabular-nums">{count}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {byAge.length > 0 && (
-            <div>
-              <p className="font-medium text-zinc-500 mb-1.5 uppercase tracking-wider text-[10px]">
-                By Recency
-              </p>
-              <div className="space-y-1">
-                {byAge.map(([ageId, count]) => {
-                  const opt = REPORT_AGE_OPTIONS.find((a) => a.id === ageId);
-                  return (
-                    <div key={ageId} className="flex items-center justify-between">
-                      <span>{opt?.label ?? ageId}</span>
-                      <span className="font-semibold tabular-nums">{count}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          <div
-            className="pt-2 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between"
+    <div className="fixed top-4 right-4 z-[9998] flex flex-col items-end">
+      {collapsed ? (
+        <button
+          onClick={() => setCollapsed(false)}
+          className="flex items-center gap-1.5 px-3 py-2 rounded-full border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-lg hover:shadow-xl transition-shadow cursor-pointer"
+        >
+          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: getSafetyColor(score) }} />
+          <span className="text-xs font-bold tabular-nums text-zinc-700 dark:text-zinc-300">{visible.length}</span>
+          <span className="text-[10px] text-zinc-400 hidden sm:inline">incidents</span>
+          <span className="text-xs text-zinc-400 ml-1">▾</span>
+        </button>
+      ) : (
+        <div className="w-64 max-h-[70vh] flex flex-col rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-xl overflow-hidden">
+          <button
+            onClick={() => setCollapsed(true)}
+            className="flex items-center justify-between px-3 py-2.5 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-700 cursor-pointer"
           >
-            <span
-              className="font-semibold text-sm"
-              style={{ color: getSafetyColor(score) }}
-            >
-              {label}
-            </span>
-            <span className="text-zinc-400 tabular-nums">{score}/100</span>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">
+                Area Report
+              </span>
+              <span
+                className="inline-block w-2 h-2 rounded-full"
+                style={{ backgroundColor: getSafetyColor(score) }}
+              />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs tabular-nums text-zinc-500">{visible.length}</span>
+              <span className="text-xs text-zinc-400">▾</span>
+            </div>
+          </button>
+
+          <div className="flex-1 overflow-y-auto p-3 space-y-3 text-xs text-zinc-700 dark:text-zinc-300">
+            {byType.length > 0 && (
+              <div>
+                <p className="font-medium text-zinc-500 mb-1.5 uppercase tracking-wider text-[10px]">
+                  By Crime Type
+                </p>
+                <div className="space-y-1">
+                  {byType.map(([typeId, count]) => {
+                    const ct = CRIME_TYPES.find((c) => c.id === typeId);
+                    return (
+                      <div key={typeId} className="flex items-center justify-between">
+                        <span>
+                          {ct?.emoji ?? '❓'} {ct?.label ?? typeId}
+                        </span>
+                        <span className="font-semibold tabular-nums">{count}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {byAge.length > 0 && (
+              <div>
+                <p className="font-medium text-zinc-500 mb-1.5 uppercase tracking-wider text-[10px]">
+                  By Recency
+                </p>
+                <div className="space-y-1">
+                  {byAge.map(([ageId, count]) => {
+                    const opt = REPORT_AGE_OPTIONS.find((a) => a.id === ageId);
+                    return (
+                      <div key={ageId} className="flex items-center justify-between">
+                        <span>{opt?.label ?? ageId}</span>
+                        <span className="font-semibold tabular-nums">{count}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+              <span className="font-semibold text-sm" style={{ color: getSafetyColor(score) }}>
+                {label}
+              </span>
+              <span className="text-zinc-400 tabular-nums">{score}/100</span>
+            </div>
           </div>
         </div>
       )}
