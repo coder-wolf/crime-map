@@ -13,10 +13,11 @@ import {
   type Incident,
   type CrimeCluster,
   getSafetyColor,
-  INCIDENT_RADIUS,
+  PRIMARY_RADIUS,
+  SECONDARY_RADIUS,
 } from './data';
 
-function ClickHandler({
+const ClickHandler = React.memo(function ClickHandler({
   isReporting,
   onClick,
 }: {
@@ -31,9 +32,9 @@ function ClickHandler({
     },
   });
   return null;
-}
+});
 
-export default function MapView({
+const MapView = React.memo(function MapView({
   incidents,
   clusters,
   isReporting,
@@ -46,6 +47,7 @@ export default function MapView({
 }) {
   return (
     <MapContainer
+      key="map"
       center={[22.82, 89.555]}
       zoom={13}
       className="h-full w-full"
@@ -84,7 +86,18 @@ export default function MapView({
         <React.Fragment key={inc.id}>
           <Circle
             center={[inc.lat, inc.lng]}
-            radius={INCIDENT_RADIUS * 111000}
+            radius={SECONDARY_RADIUS * 111000}
+            pathOptions={{
+              color: '#ef4444',
+              fillColor: '#ef4444',
+              fillOpacity: 0.04,
+              weight: 0.5,
+              dashArray: '4 4',
+            }}
+          />
+          <Circle
+            center={[inc.lat, inc.lng]}
+            radius={PRIMARY_RADIUS * 111000}
             pathOptions={{
               color: '#ef4444',
               fillColor: '#ef4444',
@@ -123,4 +136,6 @@ export default function MapView({
       )}
     </MapContainer>
   );
-}
+});
+
+export default MapView;

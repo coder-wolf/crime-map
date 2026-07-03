@@ -1,4 +1,5 @@
-export const INCIDENT_RADIUS = 0.002;
+export const PRIMARY_RADIUS = 0.0005;
+export const SECONDARY_RADIUS = 0.001;
 
 export interface Incident {
   id: string;
@@ -106,20 +107,18 @@ export function clusterIncidents(
     rawClusters.push(cluster);
   }
 
-  const maxCount = Math.max(...rawClusters.map((c) => c.length), 1);
-
   return rawClusters.map((idxList) => {
     const clusterIncidents = idxList.map((idx) => incidents[idx]);
     const clusterPoints = clusterIncidents.map(
       (inc) => [inc.lat, inc.lng] as [number, number]
     );
     const buffered = clusterPoints.flatMap((p) =>
-      bufferPoint(p[0], p[1], INCIDENT_RADIUS)
+      bufferPoint(p[0], p[1], SECONDARY_RADIUS)
     );
     const polygon = convexHull(buffered);
     if (polygon.length === 0) return null;
     const count = clusterPoints.length;
-    const safetyScore = Math.max(10, 100 - (count / Math.max(maxCount, 1)) * 100);
+    const safetyScore = Math.max(10, Math.min(95, 110 - count * 10));
 
     return {
       id: `cluster-${clusterIncidents[0].id}`,

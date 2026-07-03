@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import {
   type Incident,
@@ -12,25 +12,39 @@ import {
 
 const MapView = dynamic(() => import('./MapView'), { ssr: false });
 
-function loadIncidents(): Incident[] {
-  if (typeof window === 'undefined') return [];
+async function fetchIncidents(): Promise<Incident[]> {
   try {
-    const raw = localStorage.getItem('crime-map-incidents');
-    return raw ? JSON.parse(raw) : [];
+    const res = await fetch('/api/incidents');
+    if (!res.ok) return [];
+    return await res.json();
   } catch {
     return [];
   }
 }
 
-function saveIncidents(incidents: Incident[]) {
+async function postIncident(inc: Incident) {
   try {
-    localStorage.setItem('crime-map-incidents', JSON.stringify(incidents));
+    await fetch('/api/incidents', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(inc),
+    });
+  } catch {}
+}
+
+async function clearIncidents() {
+  try {
+    await fetch('/api/incidents', { method: 'DELETE' });
   } catch {}
 }
 
 export default function Home() {
-  const [incidents, setIncidents] = useState<Incident[]>(loadIncidents);
+  const [incidents, setIncidents] = useState<Incident[]>([]);
   const [isReporting, setIsReporting] = useState(false);
+
+  useEffect(() => {
+    fetchIncidents().then(setIncidents);
+  }, []);
 
   const clusters = useMemo<CrimeCluster[]>(
     () => clusterIncidents(incidents),
@@ -50,16 +64,15 @@ export default function Home() {
         lat: latlng[0],
         lng: latlng[1],
       };
-      const updated = [...incidents, inc];
-      setIncidents(updated);
-      saveIncidents(updated);
+      postIncident(inc);
+      setIncidents((prev) => [...prev, inc]);
     },
-    [isReporting, incidents],
+    [isReporting],
   );
 
-  const clearIncidents = () => {
+  const handleClear = () => {
+    clearIncidents();
     setIncidents([]);
-    saveIncidents([]);
   };
 
   return (
@@ -71,11 +84,11 @@ export default function Home() {
         </div>
 
         <div className="flex-1 overflow-y-auto p-2 space-y-1">
-          {sorted.length === 0 && (
+          {incidents.length === 0 && (
             <p className="text-sm text-zinc-400 text-center py-8">
-              {incidents.length === 0
-                ? 'No incidents reported yet.\nClick "Report Incident" to start.'
-                : 'Not enough data to form clusters.\nNeed at least 2 nearby reports.'}
+              No incidents reported yet.
+              <br />
+              Click &quot;Report Incident&quot; to start.
             </p>
           )}
           {sorted.map((cluster) => (
@@ -147,7 +160,7 @@ export default function Home() {
 
           {incidents.length > 0 && (
             <button
-              onClick={clearIncidents}
+              onClick={handleClear}
               className="w-full px-3 py-1.5 text-xs rounded text-zinc-400 hover:text-red-500 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors"
             >
               Clear all ({incidents.length}) incidents
