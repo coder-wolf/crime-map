@@ -173,17 +173,21 @@ export function clusterIncidents(
     const cluster: number[] = [i];
     assigned.add(i);
 
+    let centroid = points[i];
     let changed = true;
     while (changed) {
       changed = false;
       for (let j = 0; j < points.length; j++) {
         if (assigned.has(j)) continue;
-        const isNear = cluster.some((idx) => dist(points[idx], points[j]) <= maxDist);
-        if (isNear) {
+        if (dist(centroid, points[j]) <= maxDist) {
           cluster.push(j);
           assigned.add(j);
           changed = true;
         }
+      }
+      if (changed) {
+        const sum = cluster.reduce((acc, idx) => [acc[0] + points[idx][0], acc[1] + points[idx][1]], [0, 0]);
+        centroid = [sum[0] / cluster.length, sum[1] / cluster.length];
       }
     }
 
