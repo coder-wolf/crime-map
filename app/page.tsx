@@ -10,6 +10,7 @@ import {
   clusterIncidents,
 } from './data';
 import type { MapBounds } from './MapView';
+import ReportCard from './ReportCard';
 
 const MapView = dynamic(() => import('./MapView'), { ssr: false });
 
@@ -274,6 +275,8 @@ export default function Home() {
           onBoundsChange={setBounds}
         />
       </main>
+
+      <ReportCard incidents={incidents} bounds={bounds} />
     </div>
   );
 }
