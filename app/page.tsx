@@ -64,6 +64,7 @@ function isClusterVisible(
 export default function Home() {
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [isReporting, setIsReporting] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [bounds, setBounds] = useState<MapBounds | null>(null);
 
   useEffect(() => {
@@ -112,24 +113,29 @@ export default function Home() {
     setIncidents([]);
   };
 
+  const sidebarWidth = 260;
+
   return (
-    <div className="flex h-screen w-screen">
-      <aside className="w-1/5 min-w-[250px] h-full overflow-y-auto border-r border-zinc-200 bg-white dark:bg-zinc-950 dark:border-zinc-800 flex flex-col">
-        <div className="p-4 border-b border-zinc-200 dark:border-zinc-800">
+    <div className="flex h-screen w-screen relative overflow-hidden">
+      <aside
+        className="h-full overflow-y-auto border-r border-zinc-200 bg-white dark:bg-zinc-950 dark:border-zinc-800 flex flex-col shrink-0 transition-all duration-300 ease-in-out"
+        style={{ width: sidebarOpen ? sidebarWidth : 0 }}
+      >
+        <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 shrink-0">
           <h1 className="text-xl font-bold">Crime Map</h1>
           <p className="text-xs text-zinc-500 truncate">{centerLabel}</p>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-2 space-y-1">
+        <div className="flex-1 overflow-y-auto p-2 space-y-1 min-w-0">
           {incidents.length === 0 && (
-            <p className="text-sm text-zinc-400 text-center py-8">
+            <p className="text-sm text-zinc-400 text-center py-8 px-2">
               No incidents reported yet.
               <br />
               Click &quot;Report Incident&quot; to start.
             </p>
           )}
           {incidents.length > 0 && sorted.length === 0 && (
-            <p className="text-sm text-zinc-400 text-center py-8">
+            <p className="text-sm text-zinc-400 text-center py-8 px-2">
               No clusters visible at this zoom level.
             </p>
           )}
@@ -146,7 +152,7 @@ export default function Home() {
                 <p className="font-medium text-sm truncate">
                   {getSafetyLabel(cluster.safetyScore)} Zone
                 </p>
-                <p className="text-xs text-zinc-400">
+                <p className="text-xs text-zinc-400 truncate">
                   {cluster.incidents.length} incidents &middot;{' '}
                   {cluster.incidents.length > 0
                     ? `~${(
@@ -211,7 +217,27 @@ export default function Home() {
         </div>
       </aside>
 
-      <main className="flex-1 h-full">
+      <button
+        onClick={() => setSidebarOpen((p) => !p)}
+        className="absolute top-1/2 -translate-y-1/2 z-20 w-6 h-12 flex items-center justify-center bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-r-md shadow-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+        style={{ left: sidebarOpen ? sidebarWidth - 1 : 0 }}
+      >
+        <svg
+          className="w-3 h-3 text-zinc-500"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d={sidebarOpen ? 'M15 19l-7-7 7-7' : 'M9 5l7 7-7 7'}
+          />
+        </svg>
+      </button>
+
+      <main className="flex-1 h-full min-w-0">
         <MapView
           incidents={incidents}
           clusters={clusters}
