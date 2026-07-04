@@ -79,7 +79,7 @@ export default function Home() {
   const [bounds, setBounds] = useState<MapBounds | null>(null);
   const [selectedClusterId, setSelectedClusterId] = useState<string | null>(null);
   const [clusterNames, setClusterNames] = useState<Record<string, string>>({});
-  const [polygonColorMode, setPolygonColorMode] = useState<'gray' | 'color'>('color');
+  const [polygonColorMode, setPolygonColorMode] = useState<'gray' | 'color'>('gray');
 
   useEffect(() => {
     fetchIncidents().then(setIncidents);
