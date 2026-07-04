@@ -424,7 +424,7 @@ const MapView = React.memo(function MapView({
         </Marker>
       )}
 
-      <div className="absolute bottom-0 right-0 z-[1000] flex flex-col gap-1 items-end m-3">
+      <div className="absolute bottom-0 right-0 z-[1000] flex flex-col gap-4 items-end m-3">
         <LocateButton userPosition={userPosition} />
         <div className="text-xs px-2 py-1.5 rounded bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-600 shadow-md cursor-pointer select-none hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors" onClick={() => setDarkTiles(p => !p)}>
           {darkTiles ? '☀️ Light' : '🌙 Dark'}
