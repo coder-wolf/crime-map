@@ -64,10 +64,12 @@ export default function Home() {
   const [isReporting, setIsReporting] = useState(false);
   const [pendingLocation, setPendingLocation] = useState<[number, number] | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 639px)');
     const handler = (e: MediaQueryListEvent | MediaQueryList) => {
+      setIsMobile(e.matches);
       setSidebarOpen(!e.matches);
     };
     handler(mq);
@@ -386,18 +388,31 @@ export default function Home() {
         </div>
       </aside>
 
+      {isMobile && sidebarOpen && (
+        <div
+          className="fixed inset-0 z-[9998] bg-black/30"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {!sidebarOpen && (
-        <button
-          onClick={() => setSidebarOpen(true)}
-          className="fixed top-3 left-3 z-[9999] w-9 h-9 flex items-center justify-center rounded-md bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-600 shadow-lg hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-all cursor-pointer"
-          title="Show sidebar"
-        >
-          <svg className="w-5 h-5 text-zinc-600 dark:text-zinc-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-            <line x1="3" y1="6" x2="21" y2="6" />
-            <line x1="3" y1="12" x2="21" y2="12" />
-            <line x1="3" y1="18" x2="21" y2="18" />
-          </svg>
-        </button>
+        <div className="fixed top-0 left-0 right-0 z-[9999] flex items-center gap-3 p-4 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-md">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="shrink-0 w-8 h-8 flex items-center justify-center rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+            title="Show sidebar"
+          >
+            <svg className="w-5 h-5 text-zinc-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <line x1="3" y1="6" x2="21" y2="6" />
+              <line x1="3" y1="12" x2="21" y2="12" />
+              <line x1="3" y1="18" x2="21" y2="18" />
+            </svg>
+          </button>
+          <div className="min-w-0">
+            <h1 className="text-xl font-bold truncate">Crime Map</h1>
+            <p className="text-xs text-zinc-500 truncate">{centerLabel}</p>
+          </div>
+        </div>
       )}
 
       <main className="flex-1 h-full min-w-0">
