@@ -396,23 +396,18 @@ export default function Home() {
       )}
 
       {!sidebarOpen && (
-        <div className="fixed top-0 left-0 right-0 z-[9999] flex items-center gap-3 p-4 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-md">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="shrink-0 w-8 h-8 flex items-center justify-center rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
-            title="Show sidebar"
-          >
-            <svg className="w-5 h-5 text-zinc-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-              <line x1="3" y1="6" x2="21" y2="6" />
-              <line x1="3" y1="12" x2="21" y2="12" />
-              <line x1="3" y1="18" x2="21" y2="18" />
-            </svg>
-          </button>
-          <div className="min-w-0">
-            <h1 className="text-xl font-bold truncate">Crime Map</h1>
-            <p className="text-xs text-zinc-500 truncate">{centerLabel}</p>
-          </div>
-        </div>
+        <button
+          onClick={() => setSidebarOpen(true)}
+          className="fixed top-3 left-3 z-[9999] flex items-center gap-2 px-3 py-2 rounded-full border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-lg hover:shadow-xl transition-shadow cursor-pointer"
+          title="Show sidebar"
+        >
+          <svg className="w-4 h-4 text-zinc-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+          </svg>
+          <span className="text-sm font-bold text-zinc-700 dark:text-zinc-300">Crime Map</span>
+        </button>
       )}
 
       <main className="flex-1 h-full min-w-0">
