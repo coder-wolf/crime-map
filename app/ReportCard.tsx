@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { type Incident, type CrimeCluster, CRIME_TYPES, REPORT_AGE_OPTIONS, getSafetyLabel, getSafetyColor } from './data';
 import type { MapBounds } from './MapView';
 
@@ -31,6 +31,16 @@ export default function ReportCard({
   clusterName: string | null;
 }) {
   const [collapsed, setCollapsed] = useState(true);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 639px)');
+    const handler = (e: MediaQueryListEvent | MediaQueryList) => {
+      setCollapsed(e.matches);
+    };
+    handler(mq);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
 
   const sourceIncidents = selectedCluster?.incidents ?? incidents;
   const sourceBounds = selectedCluster ? null : bounds;
@@ -99,7 +109,7 @@ export default function ReportCard({
             </div>
           </button>
 
-          <div className="flex-1 overflow-y-auto p-3 space-y-3 text-xs text-zinc-700 dark:text-zinc-300">
+          <div className="flex-1 overflow-y-auto p-3 space-y-3 text-xs text-zinc-300">
             {byType.length > 0 && (
               <div>
                 <p className="font-medium text-zinc-500 mb-1.5 uppercase tracking-wider text-[10px]">
