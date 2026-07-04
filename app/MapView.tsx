@@ -136,6 +136,7 @@ const MapView = React.memo(function MapView({
   onCancelReport: () => void;
   onBoundsChange: (bounds: MapBounds) => void;
 }) {
+  const [darkTiles, setDarkTiles] = useState(false);
   const [step, setStep] = useState<'type' | 'age'>('type');
   const [selectedType, setSelectedType] = useState<string | null>(null);
 
@@ -178,8 +179,9 @@ const MapView = React.memo(function MapView({
       style={{ height: '100%', width: '100%' }}
     >
       <TileLayer
+        key={darkTiles ? 'dark' : 'light'}
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        url={darkTiles ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"}
       />
 
       <MapResizer />
@@ -392,6 +394,12 @@ const MapView = React.memo(function MapView({
           </Tooltip>
         </Marker>
       )}
+
+      <div className="leaflet-bottom leaflet-right">
+        <div className="leaflet-control text-xs px-2 py-1.5 m-2 rounded bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-600 shadow-md cursor-pointer select-none" onClick={() => setDarkTiles(p => !p)}>
+          {darkTiles ? '☀️ Light' : '🌙 Dark'}
+        </div>
+      </div>
 
       {isReporting && !pendingLocation && (
         <div
