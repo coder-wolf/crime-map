@@ -94,6 +94,20 @@ function MapResizer() {
   return null;
 }
 
+function LocateButton({ userPosition }: { userPosition: [number, number] | null }) {
+  const map = useMap();
+
+  return (
+    <div className="text-xs px-2 py-1.5 rounded bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-600 shadow-md cursor-pointer select-none hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors" onClick={() => {
+      if (userPosition) {
+        map.flyTo(userPosition, 15, { duration: 1.5 });
+      }
+    }}>
+      📍 My Location
+    </div>
+  );
+}
+
 function UserLocationHandler({
   userPosition,
 }: {
@@ -395,8 +409,9 @@ const MapView = React.memo(function MapView({
         </Marker>
       )}
 
-      <div className="leaflet-bottom leaflet-right">
-        <div className="leaflet-control text-xs px-2 py-1.5 m-2 rounded bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-600 shadow-md cursor-pointer select-none" onClick={() => setDarkTiles(p => !p)}>
+      <div className="leaflet-bottom leaflet-right flex flex-col gap-1 items-end m-2">
+        {userPosition && <LocateButton userPosition={userPosition} />}
+        <div className="text-xs px-2 py-1.5 rounded bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-600 shadow-md cursor-pointer select-none hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors" onClick={() => setDarkTiles(p => !p)}>
           {darkTiles ? '☀️ Light' : '🌙 Dark'}
         </div>
       </div>
