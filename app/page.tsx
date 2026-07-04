@@ -64,6 +64,16 @@ export default function Home() {
   const [isReporting, setIsReporting] = useState(false);
   const [pendingLocation, setPendingLocation] = useState<[number, number] | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 639px)');
+    const handler = (e: MediaQueryListEvent | MediaQueryList) => {
+      setSidebarOpen(!e.matches);
+    };
+    handler(mq);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
   const [bounds, setBounds] = useState<MapBounds | null>(null);
   const [selectedClusterId, setSelectedClusterId] = useState<string | null>(null);
   const [clusterNames, setClusterNames] = useState<Record<string, string>>({});
