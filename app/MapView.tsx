@@ -79,6 +79,21 @@ function BoundsReporter({
   return null;
 }
 
+function MapResizer() {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!map.getContainer()) return;
+    const observer = new ResizeObserver(() => {
+      map.invalidateSize();
+    });
+    observer.observe(map.getContainer());
+    return () => observer.disconnect();
+  }, [map]);
+
+  return null;
+}
+
 function UserLocationHandler({
   userPosition,
 }: {
@@ -167,6 +182,7 @@ const MapView = React.memo(function MapView({
         url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
       />
 
+      <MapResizer />
       <ClickHandler isReporting={isReporting} onClick={onReport} onDeselect={() => onClusterSelect(null)} hasSelection={selectedClusterId !== null} skippedRef={polygonClickedRef} />
       <BoundsReporter onBoundsChange={onBoundsChange} />
 
