@@ -94,16 +94,25 @@ function MapResizer() {
   return null;
 }
 
-function LocateButton({ userPosition }: { userPosition: [number, number] | null }) {
+function LocateButton() {
   const map = useMap();
 
+  const handleLocate = () => {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        map.flyTo([pos.coords.latitude, pos.coords.longitude], 15, { duration: 1.5 });
+      },
+      () => {},
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
+  };
+
   return (
-    <div className="text-xs px-2 py-1.5 rounded bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-600 shadow-md cursor-pointer select-none hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors" onClick={() => {
-      if (userPosition) {
-        map.flyTo(userPosition, 15, { duration: 1.5 });
-      }
-    }}>
-      📍 My Location
+    <div className="w-9 h-9 flex items-center justify-center rounded-full bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-600 shadow-md cursor-pointer select-none hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors" onClick={handleLocate}>
+      <svg className="w-4 h-4 text-zinc-600 dark:text-zinc-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="3" />
+        <path d="M12 2v4m0 12v4m-10-10h4m12 0h4" />
+      </svg>
     </div>
   );
 }
@@ -410,7 +419,7 @@ const MapView = React.memo(function MapView({
       )}
 
       <div className="leaflet-bottom leaflet-right flex flex-col gap-1 items-end m-2">
-        {userPosition && <LocateButton userPosition={userPosition} />}
+        <LocateButton />
         <div className="text-xs px-2 py-1.5 rounded bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-600 shadow-md cursor-pointer select-none hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors" onClick={() => setDarkTiles(p => !p)}>
           {darkTiles ? '☀️ Light' : '🌙 Dark'}
         </div>
